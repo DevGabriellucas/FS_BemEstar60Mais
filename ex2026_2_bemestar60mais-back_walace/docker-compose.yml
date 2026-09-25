@@ -1,0 +1,63 @@
+
+services:
+  web:
+    build: .
+    command: bash -c "python manage.py makemigrations  && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - bemestar_network
+
+  db:
+    image: postgres:17
+    container_name: bemestar_db
+    restart: always
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=django_user
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=BemEstar60
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U django_user -d BemEstar60"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - bemestar_network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: bemestar_pgadmin
+    restart: always
+    ports:
+      - "127.0.0.1:5050:80" # Você pode mudar a porta externa se 5050 estiver em uso
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@bemestar.com # Altere para um email de sua escolha
+      PGADMIN_DEFAULT_PASSWORD: admin # Altere para uma senha forte
+      PGADMIN_LISTEN_PORT: 80 # A porta interna do container pgAdmin
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - db # O pgAdmin depende do serviço de banco de dados para iniciar
+    networks:
+      - bemestar_network
+
+
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+networks:
+  bemestar_network:
+    driver: bridge

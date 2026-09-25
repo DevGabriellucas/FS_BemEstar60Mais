@@ -1,0 +1,23 @@
+# Define que vamos usar Docker para executar este script
+image: docker:20.10.16
+
+services:
+  - docker:20.10.16-dind
+
+# Define as fases do nosso pipeline
+stages:
+  - build
+
+# Tarefa de build que será executada na fase 'build'
+build_image:
+  stage: build
+  # Este script só será executado para a branch 'main' (ou a sua branch principal)
+  only:
+    - main
+  script:
+    # 1. Faz login no Container Registry do GitLab usando variáveis pré-definidas
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    # 2. Constrói a imagem Docker a partir do seu Dockerfile
+    - docker build -t $CI_REGISTRY_IMAGE:latest .
+    # 3. Envia a imagem para o Container Registry do GitLab
+    - docker push $CI_REGISTRY_IMAGE:latest
